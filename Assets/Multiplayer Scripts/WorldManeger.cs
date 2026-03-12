@@ -1,0 +1,174 @@
+using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+namespace HelloWorld
+{
+    public class WorldManeger : MonoBehaviour
+    {
+        [Header("LAN Connection")]
+        [SerializeField] private string hostIp = "192.168.1.23"; // change this on the CLIENT build
+        [SerializeField] private ushort port = 7777;
+
+        VisualElement rootVisualElement;
+        Button hostButton;
+        Button clientButton;
+        Button serverButton;
+        Button moveButton;
+        Label statusLabel;
+
+        void OnEnable()
+        {
+            var uiDocument = GetComponent<UIDocument>();
+            rootVisualElement = uiDocument.rootVisualElement;
+
+            hostButton = CreateButton("HostButton", "Host");
+            clientButton = CreateButton("ClientButton", "Client");
+            serverButton = CreateButton("ServerButton", "Server");
+            moveButton = CreateButton("MoveButton", "Move");
+            statusLabel = CreateLabel("StatusLabel", "Not Connected");
+
+            rootVisualElement.Clear();
+            rootVisualElement.Add(hostButton);
+            rootVisualElement.Add(clientButton);
+            rootVisualElement.Add(serverButton);
+            rootVisualElement.Add(moveButton);
+            rootVisualElement.Add(statusLabel);
+
+            hostButton.clicked += OnHostButtonClicked;
+            clientButton.clicked += OnClientButtonClicked;
+            serverButton.clicked += OnServerButtonClicked;
+            moveButton.clicked += SubmitNewPosition;
+        }
+
+        void Update()
+        {
+            UpdateUI();
+        }
+
+        void OnDisable()
+        {
+            hostButton.clicked -= OnHostButtonClicked;
+            clientButton.clicked -= OnClientButtonClicked;
+            serverButton.clicked -= OnServerButtonClicked;
+            moveButton.clicked -= SubmitNewPosition;
+        }
+
+        void OnHostButtonClicked()
+        {
+            var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+            transport.SetConnectionData("0.0.0.0", port);
+            NetworkManager.Singleton.StartHost();
+        }
+
+        void OnClientButtonClicked()
+        {
+            var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+            transport.SetConnectionData(hostIp, port);
+            NetworkManager.Singleton.StartClient();
+        }
+
+        void OnServerButtonClicked()
+        {
+            var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+            transport.SetConnectionData("0.0.0.0", port);
+            NetworkManager.Singleton.StartServer();
+        }
+
+        private Button CreateButton(string name, string text)
+        {
+            var button = new Button();
+            button.name = name;
+            button.text = text;
+            button.style.width = 240;
+            button.style.backgroundColor = Color.white;
+            button.style.color = Color.black;
+            button.style.unityFontStyleAndWeight = FontStyle.Bold;
+            return button;
+        }
+
+        private Label CreateLabel(string name, string content)
+        {
+            var label = new Label();
+            label.name = name;
+            label.text = content;
+            label.style.color = Color.black;
+            label.style.fontSize = 18;
+            return label;
+        }
+
+        void UpdateUI()
+        {
+            if (NetworkManager.Singleton == null)
+            {
+                SetStartButtons(false);
+                SetMoveButton(false);
+                SetStatusText("NetworkManager not found");
+                return;
+            }
+
+            if (!NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer)
+            {
+                SetStartButtons(true);
+                SetMoveButton(false);
+                SetStatusText("Not connected");
+            }
+            else
+            {
+                SetStartButtons(false);
+                SetMoveButton(true);
+                UpdateStatusLabels();
+            }
+        }
+
+        void SetStartButtons(bool state)
+        {
+            hostButton.style.display = state ? DisplayStyle.Flex : DisplayStyle.None;
+            clientButton.style.display = state ? DisplayStyle.Flex : DisplayStyle.None;
+            serverButton.style.display = state ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        void SetMoveButton(bool state)
+        {
+            moveButton.style.display = state ? DisplayStyle.Flex : DisplayStyle.None;
+            if (state)
+            {
+                moveButton.text = NetworkManager.Singleton.IsServer ? "Move" : "Request Position Change";
+            }
+        }
+
+        void SetStatusText(string text) => statusLabel.text = text;
+
+        void UpdateStatusLabels()
+        {
+            var mode = NetworkManager.Singleton.IsHost ? "Host" :
+                       NetworkManager.Singleton.IsServer ? "Server" : "Client";
+
+            string transport = "Transport: " + NetworkManager.Singleton.NetworkConfig.NetworkTransport.GetType().Name;
+            string modeText = "Mode: " + mode;
+            string ipText = $"Target IP: {hostIp}:{port}";
+
+            SetStatusText($"{transport}\n{modeText}\n{ipText}");
+        }
+
+        void SubmitNewPosition()
+        {
+            if (NetworkManager.Singleton.IsServer && !NetworkManager.Singleton.IsClient)
+            {
+                foreach (ulong uid in NetworkManager.Singleton.ConnectedClientsIds)
+                {
+                    var playerObject = NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(uid);
+                    var player = playerObject.GetComponent<MultiPScript>();
+                    player.Move();
+                }
+            }
+            else if (NetworkManager.Singleton.IsClient)
+            {
+                var playerObject = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();
+                var player = playerObject.GetComponent<MultiPScript>();
+                player.Move();
+            }
+        }
+    }
+}
