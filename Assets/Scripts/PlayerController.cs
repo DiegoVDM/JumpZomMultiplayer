@@ -1,39 +1,21 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Collider2D))]
-public class PlayerController : MonoBehaviour
+public class PlayerController : NetworkBehaviour
 {
-
     public float walkSpeed = 5f;
-
     public float jumpForce = 8f;
-    public Transform groundCheck;
-    public float groundCheckRadius = 0.2f;
     public LayerMask groundLayer;
-    private bool isGrounded;
 
-    public Bullet bulletPrefab;         
-    public Transform muzzle;             
-    public float fireCooldown = 0.15f;
-    float nextFireTime = 0f;
-
-    public AudioClip shootClip;   // drag your wav here in Inspector
-    private AudioSource audioSource;
-
-
-
-    Vector2 moveInput;
-
-
-
+    private Vector2 moveInput;
+    private Rigidbody2D rb;
 
     public bool IsMoving { get; private set; }
 
-    Rigidbody2D rb;
-
-    public bool _isFacingRight = true;
+    private bool _isFacingRight = true;
 
     public bool IsFacingRight
     {
@@ -43,8 +25,7 @@ public class PlayerController : MonoBehaviour
             if (_isFacingRight == value) return;
             _isFacingRight = value;
 
-            // Flip the sprite by mirroring X scale
-            var scale = transform.localScale; // Vector3
+            Vector3 scale = transform.localScale;
             scale.x *= -1f;
             transform.localScale = scale;
         }
@@ -53,93 +34,58 @@ public class PlayerController : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        audioSource = GetComponent<AudioSource>();
     }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    public override void OnNetworkSpawn()
     {
-        
+        // Optional but helpful:
+        // freeze non-owner input state when spawned
+        if (!IsOwner)
+        {
+            moveInput = Vector2.zero;
+        }
     }
 
-    // Update is called once per frame
-    void Update()
+    private void Update()
     {
-        // Simple grounded check using current colliders
-        bool isGrounded = rb.IsTouchingLayers(groundLayer);
+        // Only the owning player should read input
+        if (!IsOwner) return;
 
-        // Jump on W press if grounded
-        if (Keyboard.current.wKey.wasPressedThisFrame && isGrounded)
+        bool groundedNow = rb.IsTouchingLayers(groundLayer);
+
+        if (Keyboard.current.wKey.wasPressedThisFrame && groundedNow)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         }
-
-        // fire with J (or Space/LeftMouse if you prefer)
-        if (Keyboard.current.jKey.wasPressedThisFrame && Time.time >= nextFireTime)
-        {
-            Fire();
-            nextFireTime = Time.time + fireCooldown;
-        }
-
     }
 
     private void FixedUpdate()
     {
+        // Only the owning player should apply movement
+        if (!IsOwner) return;
+
         rb.linearVelocity = new Vector2(moveInput.x * walkSpeed, rb.linearVelocity.y);
     }
 
-
-
-
-    void Fire()
-    {
-        if (!bulletPrefab || !muzzle) return;
-
-        var b = Instantiate(bulletPrefab, muzzle.position, Quaternion.identity);
-        b.direction = IsFacingRight ? 1 : -1;
-
-        // Optionally flip bullet sprite to face travel
-        var s = b.transform.localScale;
-        s.x = Mathf.Abs(s.x) * (b.direction >= 0 ? 1 : -1);
-        b.transform.localScale = s;
-
-        if (audioSource != null && shootClip != null)
-        {
-            audioSource.PlayOneShot(shootClip);
-        }
-    }
-
-
-
-
-
-
     public void OnMove(InputAction.CallbackContext context)
     {
+        // Only the owning player should respond to input actions
+        if (!IsOwner) return;
+
         moveInput = context.ReadValue<Vector2>();
-
         IsMoving = moveInput != Vector2.zero;
-
         SetFacingDirection(moveInput);
     }
 
-    private void SetFacingDirection(Vector2 moveInput)
+    private void SetFacingDirection(Vector2 input)
     {
-        if(moveInput.x > 0 && !IsFacingRight)
+        if (input.x > 0 && !IsFacingRight)
         {
-            // Face the right
             IsFacingRight = true;
         }
-        else if (moveInput.x < 0 && IsFacingRight)
+        else if (input.x < 0 && IsFacingRight)
         {
-            // Face the left
             IsFacingRight = false;
         }
-
-
     }
-
-
-
-
 }
