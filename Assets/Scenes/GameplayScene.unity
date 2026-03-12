@@ -8258,6 +8258,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 1658945430376356201, guid: 977fb990dec1d46499109a0bdecfc713, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4753335342101515114, guid: 977fb990dec1d46499109a0bdecfc713, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 3841038761

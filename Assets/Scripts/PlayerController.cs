@@ -22,11 +22,10 @@ public class PlayerController : NetworkBehaviour
     public AudioClip shootClip;
     private AudioSource audioSource;
 
-    Vector2 moveInput;
+    private Vector2 moveInput;
+    private Rigidbody2D rb;
 
     public bool IsMoving { get; private set; }
-
-    Rigidbody2D rb;
 
     public bool _isFacingRight = true;
 
@@ -38,7 +37,6 @@ public class PlayerController : NetworkBehaviour
             if (_isFacingRight == value) return;
             _isFacingRight = value;
 
-            // Flip the sprite by mirroring X scale
             var scale = transform.localScale;
             scale.x *= -1f;
             transform.localScale = scale;
@@ -61,19 +59,30 @@ public class PlayerController : NetworkBehaviour
 
     void Update()
     {
-        // Only the owning player should read input
         if (!IsOwner) return;
 
-        // grounded check
+        float horizontal = 0f;
+
+        if (Keyboard.current.aKey.isPressed)
+            horizontal = -1f;
+        else if (Keyboard.current.dKey.isPressed)
+            horizontal = 1f;
+
+        moveInput = new Vector2(horizontal, 0f);
+        IsMoving = horizontal != 0f;
+
+        if (horizontal > 0f && !IsFacingRight)
+            IsFacingRight = true;
+        else if (horizontal < 0f && IsFacingRight)
+            IsFacingRight = false;
+
         bool groundedNow = rb.IsTouchingLayers(groundLayer);
 
-        // Jump on W press if grounded
         if (Keyboard.current.wKey.wasPressedThisFrame && groundedNow)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         }
 
-        // fire with J
         if (Keyboard.current.jKey.wasPressedThisFrame && Time.time >= nextFireTime)
         {
             Fire();
@@ -83,7 +92,6 @@ public class PlayerController : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        // Only the owning player should apply movement
         if (!IsOwner) return;
 
         rb.linearVelocity = new Vector2(moveInput.x * walkSpeed, rb.linearVelocity.y);
@@ -93,12 +101,9 @@ public class PlayerController : NetworkBehaviour
     {
         if (!bulletPrefab || !muzzle) return;
 
-        // For now this still does local bullet spawning.
-        // We can network shooting next after movement is confirmed working.
         var b = Instantiate(bulletPrefab, muzzle.position, Quaternion.identity);
         b.direction = IsFacingRight ? 1 : -1;
 
-        // Optionally flip bullet sprite to face travel
         var s = b.transform.localScale;
         s.x = Mathf.Abs(s.x) * (b.direction >= 0 ? 1 : -1);
         b.transform.localScale = s;
@@ -111,25 +116,6 @@ public class PlayerController : NetworkBehaviour
 
     public void OnMove(InputAction.CallbackContext context)
     {
-        // Only the owning player should respond to input actions
-        if (!IsOwner) return;
-
-        moveInput = context.ReadValue<Vector2>();
-
-        IsMoving = moveInput != Vector2.zero;
-
-        SetFacingDirection(moveInput);
-    }
-
-    private void SetFacingDirection(Vector2 moveInput)
-    {
-        if (moveInput.x > 0 && !IsFacingRight)
-        {
-            IsFacingRight = true;
-        }
-        else if (moveInput.x < 0 && IsFacingRight)
-        {
-            IsFacingRight = false;
-        }
+        // not used right now, keeping it so it doesn't break your setup
     }
 }
