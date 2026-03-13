@@ -51,13 +51,23 @@ public class PlayerController : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        Debug.Log(
+            $"PlayerController.OnNetworkSpawn | name={name} | OwnerClientId={OwnerClientId} | " +
+            $"IsOwner={IsOwner} | IsServer={IsServer} | IsClient={IsClient}"
+        );
+
         if (!IsOwner)
         {
             moveInput = Vector2.zero;
         }
     }
 
-    void Update()
+    public override void OnNetworkDespawn()
+    {
+        Debug.Log($"PlayerController.OnNetworkDespawn | name={name}");
+    }
+
+    private void Update()
     {
         if (!IsOwner) return;
 
@@ -97,10 +107,12 @@ public class PlayerController : NetworkBehaviour
         rb.linearVelocity = new Vector2(moveInput.x * walkSpeed, rb.linearVelocity.y);
     }
 
-    void Fire()
+    private void Fire()
     {
         if (!bulletPrefab || !muzzle) return;
 
+        // Single-player/local-only bullet spawn kept as reference for later multiplayer conversion.
+        // Later this should become server/network spawning.
         var b = Instantiate(bulletPrefab, muzzle.position, Quaternion.identity);
         b.direction = IsFacingRight ? 1 : -1;
 

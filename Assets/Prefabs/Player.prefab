@@ -204,10 +204,10 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 4294967295
-  bulletPrefab: {fileID: 0}
+  bulletPrefab: {fileID: 4581749615062623491, guid: f878c4126dc914ff5aea62095432e9cd, type: 3}
   muzzle: {fileID: 0}
   fireCooldown: 0.15
-  shootClip: {fileID: 0}
+  shootClip: {fileID: 8300000, guid: b163bcb13c9684e6eb586ca40c1d0e7f, type: 3}
   _isFacingRight: 1
 --- !u!114 &186850559758083185
 MonoBehaviour:
