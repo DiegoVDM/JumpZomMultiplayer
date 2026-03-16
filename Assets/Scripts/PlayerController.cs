@@ -52,9 +52,8 @@ public class PlayerController : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         Debug.Log(
-            $"PlayerController.OnNetworkSpawn | name={name} | OwnerClientId={OwnerClientId} | " +
-            $"IsOwner={IsOwner} | IsServer={IsServer} | IsClient={IsClient}"
-        );
+        $"PLAYER SPAWNED!!! YAYYYYY YOU SHOULD SEE ONE NOW!!!! of type? ---> | name={name} | OwnerClientId={OwnerClientId} | IsOwner={IsOwner} | IsServer={IsServer} | IsClient={IsClient}"
+    );
 
         if (!IsOwner)
         {

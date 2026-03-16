@@ -240,7 +240,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &389310950
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1259,7 +1259,7 @@ MonoBehaviour:
     NetworkProfilingMetrics: 1
     OldPrefabList: []
   RunInBackground: 1
-  LogLevel: 1
+  LogLevel: 0
 --- !u!4 &1364483889
 Transform:
   m_ObjectHideFlags: 0
@@ -8253,6 +8253,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Zombey
       objectReference: {fileID: 0}
+    - target: {fileID: 1282672244235482584, guid: 565fcc4a6585f4fc496eb17b5ad8cc29, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7096961147629442353, guid: 565fcc4a6585f4fc496eb17b5ad8cc29, type: 3}
       propertyPath: m_LocalPosition.x
       value: -2
@@ -8349,6 +8353,10 @@ PrefabInstance:
     - target: {fileID: 7354465860498912144, guid: 6805e87f3d192430a9b5399552a44ad4, type: 3}
       propertyPath: m_Name
       value: Zombey2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7354465860498912144, guid: 6805e87f3d192430a9b5399552a44ad4, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

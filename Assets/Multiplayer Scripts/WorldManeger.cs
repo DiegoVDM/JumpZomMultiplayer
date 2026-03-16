@@ -130,31 +130,22 @@ namespace HelloWorld
 
         private void OnServerStarted()
         {
-            Debug.Log("Server started successfully.");
+            Debug.Log("SERVER STARTED YAYY SUCESS #1");
         }
 
         private void OnClientConnected(ulong clientId)
         {
-            Debug.Log($"Client connected. clientId = {clientId}");
+            Debug.Log($"CLIENT CONNECTEDDD: {clientId} AFTER CLIENT BUTTEN HAS BEN PRESS SHOULD THIS BE HERE!");
 
-            if (nm == null || nm.SpawnManager == null)
-                return;
-
-            NetworkObject playerObject = nm.SpawnManager.GetPlayerNetworkObject(clientId);
-
-            if (playerObject != null)
-            {
-                Debug.Log($"Player object found for client {clientId}: {playerObject.name}");
-            }
-            else
-            {
-                Debug.LogWarning($"No PlayerObject found yet for client {clientId}.");
-            }
+            var obj = NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(clientId);
+            Debug.Log(obj != null
+                ? $"PLAYER OBJECT FOUND FOR {clientId}: {obj.name}"
+                : $"NO PLAYER OBJECT FOUND FOR {clientId}");
         }
 
         private void OnClientDisconnected(ulong clientId)
         {
-            Debug.LogWarning($"Client disconnected. clientId = {clientId}");
+            Debug.LogWarning($"CLIENT DISCONNECTED!!!! BYEEEEE !!!!: {clientId}");
         }
 
         private Button CreateButton(string name, string text)
@@ -305,5 +296,30 @@ namespace HelloWorld
                 player.Move();
             }
         }
+
+
+
+        //Start Debug code
+        private void Start()
+        {
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+                NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+                NetworkManager.Singleton.OnServerStarted += OnServerStarted;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+                NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
+                NetworkManager.Singleton.OnServerStarted -= OnServerStarted;
+            }
+        }
+        //end Debug code
+
     }
 }
