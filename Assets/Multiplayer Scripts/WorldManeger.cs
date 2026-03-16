@@ -8,10 +8,11 @@ namespace HelloWorld
     public class WorldManeger : MonoBehaviour
     {
         [Header("LAN Connection")]
-        [SerializeField] private string hostIp = "192.168.1.23"; // client should target the host machine's LAN IP
+        [SerializeField] private string hostIp = "192.168.1.45"; // default host IP shown in the text field
         [SerializeField] private ushort port = 7777;
 
         private VisualElement rootVisualElement;
+        private TextField hostIpField;
         private Button hostButton;
         private Button clientButton;
         private Button serverButton;
@@ -32,6 +33,12 @@ namespace HelloWorld
 
             rootVisualElement = uiDocument.rootVisualElement;
 
+            // NEW: host IP text field
+            hostIpField = new TextField("Host IP");
+            hostIpField.name = "HostIpField";
+            hostIpField.value = hostIp;
+            hostIpField.style.width = 240;
+
             hostButton = CreateButton("HostButton", "Host");
             clientButton = CreateButton("ClientButton", "Client");
             serverButton = CreateButton("ServerButton", "Server");
@@ -39,6 +46,9 @@ namespace HelloWorld
             statusLabel = CreateLabel("StatusLabel", "Not Connected");
 
             rootVisualElement.Clear();
+
+            // NEW: add the IP field above the buttons
+            rootVisualElement.Add(hostIpField);
             rootVisualElement.Add(hostButton);
             rootVisualElement.Add(clientButton);
             rootVisualElement.Add(serverButton);
@@ -94,6 +104,12 @@ namespace HelloWorld
                 return;
             }
 
+            // Optional: keep the typed value saved in the variable for status/debug display
+            if (hostIpField != null)
+            {
+                hostIp = hostIpField.value.Trim();
+            }
+
             transport.SetConnectionData("0.0.0.0", port);
             bool started = nm.StartHost();
 
@@ -105,6 +121,19 @@ namespace HelloWorld
             if (nm == null || transport == null)
             {
                 Debug.LogError("Client start failed: NetworkManager or UnityTransport missing.");
+                return;
+            }
+
+            // NEW: use whatever the client typed into the text field
+            if (hostIpField != null)
+            {
+                hostIp = hostIpField.value.Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(hostIp))
+            {
+                Debug.LogError("Client start failed: host IP field is empty.");
+                SetStatusText("Enter a Host IP first");
                 return;
             }
 
@@ -122,30 +151,15 @@ namespace HelloWorld
                 return;
             }
 
+            if (hostIpField != null)
+            {
+                hostIp = hostIpField.value.Trim();
+            }
+
             transport.SetConnectionData("0.0.0.0", port);
             bool started = nm.StartServer();
 
             Debug.Log($"StartServer() returned {started}. Listening on 0.0.0.0:{port}");
-        }
-
-        private void OnServerStarted()
-        {
-            Debug.Log("SERVER STARTED YAYY SUCESS #1");
-        }
-
-        private void OnClientConnected(ulong clientId)
-        {
-            Debug.Log($"CLIENT CONNECTEDDD: {clientId} AFTER CLIENT BUTTEN HAS BEN PRESS SHOULD THIS BE HERE!");
-
-            var obj = NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(clientId);
-            Debug.Log(obj != null
-                ? $"PLAYER OBJECT FOUND FOR {clientId}: {obj.name}"
-                : $"NO PLAYER OBJECT FOUND FOR {clientId}");
-        }
-
-        private void OnClientDisconnected(ulong clientId)
-        {
-            Debug.LogWarning($"CLIENT DISCONNECTED!!!! BYEEEEE !!!!: {clientId}");
         }
 
         private Button CreateButton(string name, string text)
@@ -176,6 +190,7 @@ namespace HelloWorld
             {
                 SetStartButtons(false);
                 SetMoveButton(false);
+                if (hostIpField != null) hostIpField.style.display = DisplayStyle.None;
                 SetStatusText("NetworkManager not found");
                 return;
             }
@@ -184,12 +199,14 @@ namespace HelloWorld
             {
                 SetStartButtons(true);
                 SetMoveButton(false);
+                if (hostIpField != null) hostIpField.style.display = DisplayStyle.Flex;
                 SetStatusText("Not connected");
             }
             else
             {
                 SetStartButtons(false);
                 SetMoveButton(true);
+                if (hostIpField != null) hostIpField.style.display = DisplayStyle.None;
                 UpdateStatusLabels();
             }
         }
@@ -297,29 +314,38 @@ namespace HelloWorld
             }
         }
 
-
-
-        //Start Debug code
+        // Start Debug code
+        // Keeping your debug callback methods.
+        // IMPORTANT: do NOT subscribe here again, because OnEnable already does that.
         private void Start()
         {
-            if (NetworkManager.Singleton != null)
-            {
-                NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
-                NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
-                NetworkManager.Singleton.OnServerStarted += OnServerStarted;
-            }
+            Debug.Log("WorldManeger Start() called.");
         }
 
         private void OnDestroy()
         {
-            if (NetworkManager.Singleton != null)
-            {
-                NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
-                NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
-                NetworkManager.Singleton.OnServerStarted -= OnServerStarted;
-            }
+            Debug.Log("WorldManeger OnDestroy() called.");
         }
-        //end Debug code
 
+        private void OnServerStarted()
+        {
+            Debug.Log("SERVER STARTED YAYY SUCESS #1");
+        }
+
+        private void OnClientConnected(ulong clientId)
+        {
+            Debug.Log($"CLIENT CONNECTEDDD: {clientId} AFTER CLIENT BUTTEN HAS BEN PRESS SHOULD THIS BE HERE!");
+
+            var obj = NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(clientId);
+            Debug.Log(obj != null
+                ? $"PLAYER OBJECT FOUND FOR {clientId}: {obj.name}"
+                : $"NO PLAYER OBJECT FOUND FOR {clientId}");
+        }
+
+        private void OnClientDisconnected(ulong clientId)
+        {
+            Debug.LogWarning($"CLIENT DISCONNECTED!!!! BYEEEEE !!!!: {clientId}");
+        }
+        // End Debug code
     }
 }
