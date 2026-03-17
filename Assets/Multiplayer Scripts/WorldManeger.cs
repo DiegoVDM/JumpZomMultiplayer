@@ -8,7 +8,7 @@ namespace HelloWorld
     public class WorldManeger : MonoBehaviour
     {
         [Header("LAN Connection")]
-        [SerializeField] private string hostIp = "192.168.1.45"; // default host IP shown in the text field
+        [SerializeField] private string hostIp = "192.168.1.45";
         [SerializeField] private ushort port = 7777;
 
         private VisualElement rootVisualElement;
@@ -18,6 +18,7 @@ namespace HelloWorld
         private Button serverButton;
         private Button moveButton;
         private Label statusLabel;
+        private Label scoreLabel;
 
         private NetworkManager nm;
         private UnityTransport transport;
@@ -33,7 +34,6 @@ namespace HelloWorld
 
             rootVisualElement = uiDocument.rootVisualElement;
 
-            // NEW: host IP text field
             hostIpField = new TextField("Host IP");
             hostIpField.name = "HostIpField";
             hostIpField.value = hostIp;
@@ -43,17 +43,22 @@ namespace HelloWorld
             clientButton = CreateButton("ClientButton", "Client");
             serverButton = CreateButton("ServerButton", "Server");
             moveButton = CreateButton("MoveButton", "Move");
+
             statusLabel = CreateLabel("StatusLabel", "Not Connected");
+            scoreLabel = CreateLabel("ScoreLabel", "Supplies Collected: 0");
+            scoreLabel.style.fontSize = 22;
+            scoreLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+            scoreLabel.style.marginTop = 8;
 
             rootVisualElement.Clear();
 
-            // NEW: add the IP field above the buttons
             rootVisualElement.Add(hostIpField);
             rootVisualElement.Add(hostButton);
             rootVisualElement.Add(clientButton);
             rootVisualElement.Add(serverButton);
             rootVisualElement.Add(moveButton);
             rootVisualElement.Add(statusLabel);
+            rootVisualElement.Add(scoreLabel);
 
             hostButton.clicked += OnHostButtonClicked;
             clientButton.clicked += OnClientButtonClicked;
@@ -104,7 +109,6 @@ namespace HelloWorld
                 return;
             }
 
-            // Optional: keep the typed value saved in the variable for status/debug display
             if (hostIpField != null)
             {
                 hostIp = hostIpField.value.Trim();
@@ -124,7 +128,6 @@ namespace HelloWorld
                 return;
             }
 
-            // NEW: use whatever the client typed into the text field
             if (hostIpField != null)
             {
                 hostIp = hostIpField.value.Trim();
@@ -190,7 +193,10 @@ namespace HelloWorld
             {
                 SetStartButtons(false);
                 SetMoveButton(false);
+
                 if (hostIpField != null) hostIpField.style.display = DisplayStyle.None;
+                if (scoreLabel != null) scoreLabel.style.display = DisplayStyle.None;
+
                 SetStatusText("NetworkManager not found");
                 return;
             }
@@ -199,15 +205,40 @@ namespace HelloWorld
             {
                 SetStartButtons(true);
                 SetMoveButton(false);
+
                 if (hostIpField != null) hostIpField.style.display = DisplayStyle.Flex;
+                if (scoreLabel != null)
+                {
+                    scoreLabel.style.display = DisplayStyle.None;
+                    scoreLabel.text = "Supplies Collected: 0";
+                }
+
                 SetStatusText("Not connected");
             }
             else
             {
                 SetStartButtons(false);
                 SetMoveButton(true);
+
                 if (hostIpField != null) hostIpField.style.display = DisplayStyle.None;
+                if (scoreLabel != null) scoreLabel.style.display = DisplayStyle.Flex;
+
                 UpdateStatusLabels();
+                UpdateScoreLabel();
+            }
+        }
+
+        private void UpdateScoreLabel()
+        {
+            if (scoreLabel == null) return;
+
+            if (TeamScoreManager.Instance != null)
+            {
+                scoreLabel.text = $"Supplies Collected: {TeamScoreManager.Instance.TeamScore.Value}";
+            }
+            else
+            {
+                scoreLabel.text = "Supplies Collected: 0";
             }
         }
 
@@ -253,10 +284,6 @@ namespace HelloWorld
 
         private void SubmitNewPosition()
         {
-            // Tutorial-only code path.
-            // Keeping this as a reference, but it is NOT part of your real player movement system.
-            // Your actual player movement should come from PlayerController + NetworkTransform.
-
             if (NetworkManager.Singleton == null)
             {
                 Debug.LogWarning("SubmitNewPosition: NetworkManager.Singleton is null.");
@@ -314,9 +341,6 @@ namespace HelloWorld
             }
         }
 
-        // Start Debug code
-        // Keeping your debug callback methods.
-        // IMPORTANT: do NOT subscribe here again, because OnEnable already does that.
         private void Start()
         {
             Debug.Log("WorldManeger Start() called.");
@@ -346,6 +370,5 @@ namespace HelloWorld
         {
             Debug.LogWarning($"CLIENT DISCONNECTED!!!! BYEEEEE !!!!: {clientId}");
         }
-        // End Debug code
     }
 }
